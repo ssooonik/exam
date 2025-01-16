@@ -1,0 +1,173 @@
+class NotificationService {
+    private static NotificationService instance;
+
+    private NotificationService() {}
+
+    public static NotificationService getInstance() {
+        if (instance == null) {
+            instance = new NotificationService();
+        }
+        return instance;
+    }
+
+    public void sendNotification(Message message) {
+        System.out.println("Відправляється: " + message.getContent());
+    }
+}
+
+// Decorator for Message
+interface Message {
+    String getContent();
+}
+
+class BasicMessage implements Message {
+    private String content;
+
+    public BasicMessage(String content) {
+        this.content = content;
+    }
+
+    @Override
+    public String getContent() {
+        return content;
+    }
+}
+
+class EncryptedMessage implements Message {
+    private Message message;
+
+    public EncryptedMessage(Message message) {
+        this.message = message;
+    }
+
+    @Override
+    public String getContent() {
+        return "[Encrypted] " + message.getContent();
+    }
+}
+
+class AdMessage implements Message {
+    private Message message;
+
+    public AdMessage(Message message) {
+        this.message = message;
+    }
+
+    @Override
+    public String getContent() {
+        return message.getContent() + " Реклама"];
+    }
+}
+
+// Observer pattern
+interface Subscriber {
+    void update(String message);
+}
+
+class User implements Subscriber {
+    private String name;
+
+    public User(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public void update(String message) {
+        System.out.println(name + " отримав: " + message);
+    }
+}
+
+class NotificationManager {
+    private List<Subscriber> subscribers = new ArrayList<>();
+
+    public void subscribe(Subscriber subscriber) {
+        subscribers.add(subscriber);
+    }
+
+    public void unsubscribe(Subscriber subscriber) {
+        subscribers.remove(subscriber);
+    }
+
+    public void notifySubscribers(String message) {
+        for (Subscriber subscriber : subscribers) {
+            subscriber.update(message);
+        }
+    }
+}
+
+interface NotificationState {
+    void handle();
+}
+
+class NewState implements NotificationState {
+    @Override
+    public void handle() {
+        System.out.println("Нове повідомлення");
+    }
+}
+
+class SentState implements NotificationState {
+    @Override
+    public void handle() {
+        System.out.println("Повідомлення надіслане");
+    }
+}
+
+class DeliveredState implements NotificationState {
+    @Override
+    public void handle() {
+        System.out.println("Повідомлення отримане");
+    }
+}
+
+class ErrorState implements NotificationState {
+    @Override
+    public void handle() {
+        System.out.println("Помилка");
+    }
+}
+
+class Notification {
+    private NotificationState state;
+
+    public void setState(NotificationState state) {
+        this.state = state;
+    }
+
+    public void applyState() {
+        state.handle();
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        // Сінглтон
+        NotificationService service = NotificationService.getInstance();
+
+        // Декоратор
+        Message basicMessage = new BasicMessage("Це повідомлення");
+        Message encryptedMessage = new EncryptedMessage(basicMessage);
+        Message adMessage = new AdMessage(encryptedMessage);
+
+        service.sendNotification(adMessage);
+
+        // Obs
+        NotificationManager manager = new NotificationManager();
+        Subscriber user1 = new User("Alice");
+        Subscriber user2 = new User("Bob");
+
+        manager.subscribe(user1);
+        manager.subscribe(user2);
+
+        // Стан
+        Notification notification = new Notification();
+        notification.setState(new NewState());
+        notification.applyState();
+
+        notification.setState(new SentState());
+        notification.applyState();
+
+        notification.setState(new DeliveredState());
+        notification.applyState();
+    }
+}
